@@ -5,7 +5,11 @@ export function getDb(d1: D1Database) {
   return drizzle(d1, { schema });
 }
 
+let isTablesEnsured = false;
+
 export async function ensureTables(d1: D1Database): Promise<void> {
+  if (isTablesEnsured) return;
+
   const statements = [
     `CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -54,7 +58,9 @@ export async function ensureTables(d1: D1Database): Promise<void> {
     try {
       await d1.prepare(sql).run();
     } catch (e) {
-      console.error('Error ensuring table/index:', e);
+      // Table already exists, ignore
     }
   }
+
+  isTablesEnsured = true;
 }

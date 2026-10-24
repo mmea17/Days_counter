@@ -1,4 +1,4 @@
-const CACHE_NAME = 'days-counter-v1';
+const CACHE_NAME = 'days-counter-v2';
 const STATIC_ASSETS = [
   '/',
   '/offline.html',
@@ -39,8 +39,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Bypass API requests and non-GET requests
-  if (url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
+  // Bypass API requests and non-GET requests immediately
+  if (url.pathname.startsWith('/api') || event.request.method !== 'GET') {
     return;
   }
 

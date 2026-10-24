@@ -649,11 +649,26 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         const res = await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
           body: JSON.stringify(payload),
         });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'فشل حفظ الحدث');
+        let data = {};
+        try {
+          data = await res.json();
+        } catch (_) {}
+
+        if (res.status === 401) {
+          showToast('انتهت الجلسة. يرجى تسجيل الدخول مجدداً', 'error');
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(data.error || `تعذر حفظ الحدث (رمز: ${res.status})`);
+        }
 
         if (id) {
           const idx = eventsList.findIndex((item) => item.id === id);
@@ -667,7 +682,8 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         closeModal();
         renderEvents();
       } catch (err) {
-        showToast(err.message, 'error');
+        console.error('Save event error:', err);
+        showToast(err.message || 'حدث خطأ في الاتصال بالخادم', 'error');
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = 'حفظ الحدث';
@@ -683,7 +699,10 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الحدث؟')) return;
 
       try {
-        const res = await fetch(`/api/events/${id}`, { method: 'DELETE' });
+        const res = await fetch(`/api/events/${id}`, {
+          method: 'DELETE',
+          credentials: 'same-origin',
+        });
         if (!res.ok) throw new Error('فشل حذف الحدث');
 
         eventsList = eventsList.filter((item) => item.id !== id);

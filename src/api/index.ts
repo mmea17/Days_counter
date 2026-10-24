@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { cors } from 'hono/cors';
 import { getDb, ensureTables } from '../db';
 import { users, events, pushSubscriptions, sessions } from '../db/schema';
 import {
@@ -26,6 +27,14 @@ export interface EnvBindings {
 }
 
 export const app = new Hono<{ Bindings: EnvBindings }>();
+
+// Enable CORS for all routes
+app.use('*', cors({
+  origin: (origin) => origin || '*',
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+}));
 
 // Middleware to extract user from session cookie
 app.use('*', async (c, next) => {
@@ -96,10 +105,11 @@ app.post('/api/auth/register', async (c) => {
 
     // Create session
     const sessionId = await createSession(c.env.DB, userId);
+    const isHttps = c.req.url.startsWith('https');
     setCookie(c, 'days_counter_session', sessionId, {
       path: '/',
       httpOnly: true,
-      secure: false, // works seamlessly on both local dev and production
+      secure: isHttps,
       sameSite: 'Lax',
       maxAge: 30 * 24 * 60 * 60,
     });
@@ -145,10 +155,11 @@ app.post('/api/auth/login', async (c) => {
 
     // Create session
     const sessionId = await createSession(c.env.DB, user.id);
+    const isHttps = c.req.url.startsWith('https');
     setCookie(c, 'days_counter_session', sessionId, {
       path: '/',
       httpOnly: true,
-      secure: false,
+      secure: isHttps,
       sameSite: 'Lax',
       maxAge: 30 * 24 * 60 * 60,
     });
