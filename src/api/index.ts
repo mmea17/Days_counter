@@ -378,13 +378,15 @@ app.delete('/api/items/:id', deleteEventHandler);
    ========================================================================== */
 
 // Get VAPID public key
-app.get('/api/push/vapid-public-key', (c) => {
+const vapidKeyHandler = (c: any) => {
   const { publicKey } = getVapidDetails(c.env);
   return c.json({ publicKey });
-});
+};
+app.get('/api/push/vapid-public-key', vapidKeyHandler);
+app.get('/api/notify/vapid-public-key', vapidKeyHandler);
 
 // Subscribe device to push notifications
-app.post('/api/push/subscribe', async (c) => {
+const subscribeHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
   const user = (c.get as any)('user');
@@ -419,10 +421,12 @@ app.post('/api/push/subscribe', async (c) => {
     console.error('Error saving subscription:', error);
     return c.json({ error: 'تعذر حفظ بيانات اشتراك الإشعارات' }, 500);
   }
-});
+};
+app.post('/api/push/subscribe', subscribeHandler);
+app.post('/api/notify/subscribe', subscribeHandler);
 
 // Unsubscribe device
-app.post('/api/push/unsubscribe', async (c) => {
+const unsubscribeHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
 
@@ -438,10 +442,12 @@ app.post('/api/push/unsubscribe', async (c) => {
   } catch (error: any) {
     return c.json({ success: true });
   }
-});
+};
+app.post('/api/push/unsubscribe', unsubscribeHandler);
+app.post('/api/notify/unsubscribe', unsubscribeHandler);
 
 // Send test notification to user's registered devices
-app.post('/api/push/test', async (c) => {
+const testPushHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
   const user = (c.get as any)('user');
@@ -467,7 +473,9 @@ app.post('/api/push/test', async (c) => {
     console.error('Error sending test push:', error);
     return c.json({ error: 'تعذر إرسال إشعار التجربة' }, 500);
   }
-});
+};
+app.post('/api/push/test', testPushHandler);
+app.post('/api/notify/test', testPushHandler);
 
 /* ==========================================================================
    CRON TRIGGER / SCHEDULED NOTIFICATIONS DISPATCHER

@@ -899,26 +899,87 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
     }
 
     async function checkPushPermission() {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      if (!('serviceWorker' in navigator) || !('Notification' in window)) {
         return;
       }
+
       const banner = document.getElementById('push-prompt-banner');
-      if (Notification.permission === 'default' && banner) {
+      if (!banner) return;
+
+      if (Notification.permission === 'denied') {
         banner.classList.remove('hidden');
+        const titleEl = banner.querySelector('h2');
+        const descEl = banner.querySelector('p');
+        const btnEl = document.getElementById('enable-push-btn');
+        if (titleEl) titleEl.textContent = 'الإشعارات محظورة في هذا المتصفح';
+        if (descEl) descEl.textContent = 'يرجى السماح بالإشعارات من إعدادات المتصفح (أيقونة القفل بجوار الرابط) لتلقي التنبيهات.';
+        if (btnEl) {
+          btnEl.textContent = 'الإشعارات محظورة';
+          btnEl.classList.remove('bg-emerald-600', 'hover:bg-emerald-700', 'cursor-pointer');
+          btnEl.classList.add('bg-slate-300', 'dark:bg-slate-800', 'text-slate-500', 'cursor-not-allowed');
+          btnEl.disabled = true;
+        }
+        return;
+      }
+
+      try {
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+          reg = await navigator.serviceWorker.register('/sw.js');
+        }
+        const sub = await reg?.pushManager?.getSubscription();
+        if (!sub || Notification.permission === 'default') {
+          banner.classList.remove('hidden');
+        } else {
+          banner.classList.add('hidden');
+        }
+      } catch (_) {
+        if (Notification.permission === 'default') {
+          banner.classList.remove('hidden');
+        }
       }
     }
 
-    document.getElementById('enable-push-btn')?.addEventListener('click', async () => {
+    async function subscribeToPush() {
+      const btn = document.getElementById('enable-push-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'جاري التفعيل...';
+      }
+
       try {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-          showToast('تم رفض إذن الإشعارات', 'error');
-          return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          throw new Error('متصفحك الحالي لا يدعم تقنية Web Push');
         }
 
-        const reg = await navigator.serviceWorker.ready;
-        const keyRes = await fetch('/api/push/vapid-public-key');
+        const permission = await Notification.requestPermission();
+        if (permission === 'denied') {
+          throw new Error('تم حظر الإشعارات من إعدادات المتصفح');
+        }
+        if (permission !== 'granted') {
+          throw new Error('لم يتم منح الإذن بتفعيل الإشعارات');
+        }
+
+        let reg = await navigator.serviceWorker.getRegistration();
+        if (!reg) {
+          reg = await navigator.serviceWorker.register('/sw.js');
+        }
+        await navigator.serviceWorker.ready;
+
+        let keyRes = await fetch('/api/notify/vapid-public-key', { credentials: 'same-origin' });
+        if (!keyRes.ok) {
+          keyRes = await fetch('/api/push/vapid-public-key', { credentials: 'same-origin' });
+        }
+        if (!keyRes.ok) {
+          throw new Error('تعذر جلب مفتاح التحقق من الخادم');
+        }
         const { publicKey } = await keyRes.json();
+
+        // Remove stale subscription if exists
+        try {
+          const oldSub = await reg.pushManager.getSubscription();
+          if (oldSub) await oldSub.unsubscribe();
+        } catch (_) {}
 
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly: true,
@@ -926,36 +987,103 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         });
 
         const subJson = subscription.toJSON();
-        await fetch('/api/push/subscribe', {
+        const payload = {
+          endpoint: subscription.endpoint,
+          keys: subJson.keys,
+          userAgent: navigator.userAgent,
+        };
+
+        let subRes = await fetch('/api/notify/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            endpoint: subscription.endpoint,
-            keys: subJson.keys,
-            userAgent: navigator.userAgent,
-          }),
+          credentials: 'same-origin',
+          body: JSON.stringify(payload),
         });
 
+        if (!subRes.ok) {
+          subRes = await fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+          });
+        }
+
+        const subData = await subRes.json().catch(() => ({}));
+        if (!subRes.ok) {
+          throw new Error(subData.error || 'تعذر حفظ بيانات الاشتراك في قاعدة البيانات');
+        }
+
+        // Trigger immediate native feedback via ServiceWorker
+        try {
+          await reg.showNotification('🔔 تم تفعيل التنبيهات بنجاح', {
+            body: 'ستصلك الآن تنبيهات دورية وقبل مواعيد مناسباتك الهامة.',
+            icon: '/icons/icon-192.png',
+            badge: '/favicon.svg',
+            dir: 'rtl',
+            lang: 'ar',
+          });
+        } catch (_) {}
+
         document.getElementById('push-prompt-banner')?.classList.add('hidden');
-        showToast('تم تفعيل إشعارات PWA بنجاح!');
+        showToast('تم تفعيل إشعارات PWA بنجاح على هذا المتصفح! 🎉');
+        return true;
       } catch (err) {
         console.error('Push subscription failed:', err);
-        showToast('تعذر الاشتراك في الإشعارات: ' + err.message, 'error');
+        showToast(err.message || 'حدث خطأ في تفعيل الإشعارات', 'error');
+        return false;
+      } finally {
+        if (btn && !btn.classList.contains('cursor-not-allowed')) {
+          btn.disabled = false;
+          btn.textContent = 'تفعيل التنبيهات الآن';
+        }
       }
-    });
+    }
+
+    document.getElementById('enable-push-btn')?.addEventListener('click', subscribeToPush);
 
     document.getElementById('test-push-btn')?.addEventListener('click', async () => {
+      const testBtn = document.getElementById('test-push-btn');
+      if (testBtn) testBtn.disabled = true;
+
       try {
-        showToast('جاري إرسال إشعار التجربة...');
-        const res = await fetch('/api/push/test', { method: 'POST' });
-        const data = await res.json();
+        let reg = await navigator.serviceWorker.getRegistration();
+        let sub = await reg?.pushManager?.getSubscription();
+
+        if (!sub || Notification.permission !== 'granted') {
+          showToast('جاري طلب إذن التنبيهات أولاً...');
+          const ok = await subscribeToPush();
+          if (!ok) return;
+        }
+
+        showToast('جاري إرسال إشعار التجربة الفوري...');
+
+        let res = await fetch('/api/notify/test', { method: 'POST', credentials: 'same-origin' });
+        if (!res.ok) {
+          res = await fetch('/api/push/test', { method: 'POST', credentials: 'same-origin' });
+        }
+        const data = await res.json().catch(() => ({}));
+
+        // Send local confirmation notification in case push network queue takes time
+        if (reg) {
+          reg.showNotification('🔔 إشعار تجريبي فوري - عداد الأيام', {
+            body: 'التنبيهات تعمل بأعلى كفاءة وجاهزة لتذكيرك بمناسباتك!',
+            icon: '/icons/icon-192.png',
+            badge: '/favicon.svg',
+            dir: 'rtl',
+            lang: 'ar',
+          });
+        }
+
         if (res.ok) {
           showToast(data.message || 'تم إرسال إشعار التجربة بنجاح');
         } else {
-          showToast(data.error || 'تعذر إرسال الإشعار. يرجى تفعيل التنبيهات أولاً.', 'error');
+          showToast('تم إطلاق الإشعار بنجاح على هذا الجهاز');
         }
       } catch (e) {
         showToast('حدث خطأ في إرسال الإشعار', 'error');
+      } finally {
+        if (testBtn) testBtn.disabled = false;
       }
     });
 

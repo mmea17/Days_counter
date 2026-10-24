@@ -200,15 +200,22 @@ if (env?.DB && sessionId) {
       }
 
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+        const registerSW = () => {
+          navigator.serviceWorker
+            .register('/sw.js')
             .then((registration) => {
               console.log('ServiceWorker registered with scope:', registration.scope);
             })
             .catch((err) => {
               console.warn('ServiceWorker registration failed:', err);
             });
-        });
+        };
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          registerSW();
+        } else {
+          window.addEventListener('load', registerSW);
+        }
       }
 
       let deferredPrompt = null;
