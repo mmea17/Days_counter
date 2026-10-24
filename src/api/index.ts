@@ -242,6 +242,7 @@ const createEventHandler = async (c: any) => {
       color = 'emerald',
       reminderPreset = '1_day_before',
       recurrence = 'none',
+      displayUnits = 'days',
     } = body;
 
     if (!title || !targetDate) {
@@ -251,6 +252,10 @@ const createEventHandler = async (c: any) => {
     const db = getDb(c.env.DB);
     const now = new Date().toISOString();
     const eventId = crypto.randomUUID();
+
+    const formattedUnits = Array.isArray(displayUnits)
+      ? displayUnits.join(',')
+      : (typeof displayUnits === 'string' && displayUnits.trim().length > 0 ? displayUnits.trim() : 'days');
 
     const newEvent = {
       id: eventId,
@@ -262,6 +267,7 @@ const createEventHandler = async (c: any) => {
       color,
       reminderPreset,
       recurrence,
+      displayUnits: formattedUnits,
       lastNotifiedAt: null,
       createdAt: now,
       updatedAt: now,
@@ -293,6 +299,7 @@ const updateEventHandler = async (c: any) => {
       color,
       reminderPreset,
       recurrence,
+      displayUnits,
     } = body;
 
     const db = getDb(c.env.DB);
@@ -317,6 +324,11 @@ const updateEventHandler = async (c: any) => {
     if (color !== undefined) updates.color = color;
     if (reminderPreset !== undefined) updates.reminderPreset = reminderPreset;
     if (recurrence !== undefined) updates.recurrence = recurrence;
+    if (displayUnits !== undefined) {
+      updates.displayUnits = Array.isArray(displayUnits)
+        ? displayUnits.join(',')
+        : (typeof displayUnits === 'string' && displayUnits.trim().length > 0 ? displayUnits.trim() : 'days');
+    }
 
     await db.update(events).set(updates).where(eq(events.id, eventId));
 

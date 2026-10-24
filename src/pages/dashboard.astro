@@ -2,8 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import { getUserFromSession } from '../lib/auth';
 import { getCloudflareEnv } from '../lib/getEnv';
-import { getDb } from '../db';
-import { events } from '../db/schema';
+import { getDb } from '../db/index.ts';
+import { events } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
 
 const sessionId = Astro.cookies.get('days_counter_session')?.value;
@@ -122,10 +122,11 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
           id="display-mode-select"
           class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
         >
-          <option value="days">إجمالي الأيام</option>
-          <option value="weeks_days">أسابيع وأيام</option>
-          <option value="months_days">شهور وأيام</option>
-          <option value="years_months_days">سنوات وشهور وأيام</option>
+          <option value="custom" selected>حسب إعداد كل حدث</option>
+          <option value="days">إجمالي الأيام للكل</option>
+          <option value="weeks_days">أسابيع وأيام للكل</option>
+          <option value="months_days">شهور وأيام للكل</option>
+          <option value="years_months_days">سنوات وشهور وأيام للكل</option>
         </select>
       </div>
     </div>
@@ -207,6 +208,40 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
             required
             class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
           />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+            تنسيق ظهور العداد بالبطاقة:
+          </label>
+          <div class="grid grid-cols-4 gap-2">
+            <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-emerald-500/50 cursor-pointer transition-all text-center select-none has-[:checked]:bg-emerald-500/10 has-[:checked]:border-emerald-500/40 has-[:checked]:text-emerald-600 dark:has-[:checked]:text-emerald-400">
+              <input type="checkbox" name="displayUnits" value="days" checked class="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer" />
+              <span class="text-xs font-bold">أيام</span>
+              <span class="text-[10px] text-slate-400 font-mono">Days</span>
+            </label>
+
+            <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-emerald-500/50 cursor-pointer transition-all text-center select-none has-[:checked]:bg-emerald-500/10 has-[:checked]:border-emerald-500/40 has-[:checked]:text-emerald-600 dark:has-[:checked]:text-emerald-400">
+              <input type="checkbox" name="displayUnits" value="weeks" class="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer" />
+              <span class="text-xs font-bold">أسابيع</span>
+              <span class="text-[10px] text-slate-400 font-mono">Weeks</span>
+            </label>
+
+            <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-emerald-500/50 cursor-pointer transition-all text-center select-none has-[:checked]:bg-emerald-500/10 has-[:checked]:border-emerald-500/40 has-[:checked]:text-emerald-600 dark:has-[:checked]:text-emerald-400">
+              <input type="checkbox" name="displayUnits" value="months" class="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer" />
+              <span class="text-xs font-bold">شهور</span>
+              <span class="text-[10px] text-slate-400 font-mono">Months</span>
+            </label>
+
+            <label class="flex flex-col sm:flex-row items-center justify-center gap-1.5 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-emerald-500/50 cursor-pointer transition-all text-center select-none has-[:checked]:bg-emerald-500/10 has-[:checked]:border-emerald-500/40 has-[:checked]:text-emerald-600 dark:has-[:checked]:text-emerald-400">
+              <input type="checkbox" name="displayUnits" value="years" class="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer" />
+              <span class="text-xs font-bold">سنوات</span>
+              <span class="text-[10px] text-slate-400 font-mono">Years</span>
+            </label>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            اختر وحدة أو أكثر لتخصيص طريقة احتساب وظهور الرقم في بطاقة هذا الحدث.
+          </p>
         </div>
 
         <div class="grid grid-cols-2 gap-4">
@@ -315,7 +350,7 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
     }
 
     let activeFilter = 'all';
-    let displayMode = 'days';
+    let displayMode = 'custom';
 
     function showToast(msg, type = 'success') {
       const toast = document.getElementById('toast');
@@ -411,6 +446,109 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       };
     }
 
+    function formatCustomDuration(diff, units) {
+      if (!units || units.length === 0) return `${diff.totalDays} يوم`;
+
+      const hasYears = units.includes('years');
+      const hasMonths = units.includes('months');
+      const hasWeeks = units.includes('weeks');
+      const hasDays = units.includes('days');
+
+      // 1. Only Days
+      if (hasDays && !hasWeeks && !hasMonths && !hasYears) {
+        return `${diff.totalDays} يوم`;
+      }
+
+      // 2. Only Weeks
+      if (hasWeeks && !hasDays && !hasMonths && !hasYears) {
+        const w = Math.floor(diff.totalDays / 7);
+        return `${w} أسبوع`;
+      }
+
+      // 3. Only Months
+      if (hasMonths && !hasDays && !hasWeeks && !hasYears) {
+        const m = diff.years * 12 + diff.months;
+        return `${m} شهر`;
+      }
+
+      // 4. Only Years
+      if (hasYears && !hasDays && !hasWeeks && !hasMonths) {
+        return `${diff.years} سنة`;
+      }
+
+      // 5. Weeks and Days only
+      if (hasWeeks && hasDays && !hasMonths && !hasYears) {
+        const w = Math.floor(diff.totalDays / 7);
+        const d = diff.totalDays % 7;
+        const parts = [];
+        if (w > 0) parts.push(`${w} أسبوع`);
+        if (d > 0 || parts.length === 0) parts.push(`${d} يوم`);
+        return parts.join(' و ');
+      }
+
+      // 6. Months and Days only
+      if (hasMonths && hasDays && !hasWeeks && !hasYears) {
+        const m = diff.years * 12 + diff.months;
+        const parts = [];
+        if (m > 0) parts.push(`${m} شهر`);
+        if (diff.days > 0 || parts.length === 0) parts.push(`${diff.days} يوم`);
+        return parts.join(' و ');
+      }
+
+      // 7. Months and Weeks only
+      if (hasMonths && hasWeeks && !hasDays && !hasYears) {
+        const m = diff.years * 12 + diff.months;
+        const w = Math.floor(diff.days / 7);
+        const parts = [];
+        if (m > 0) parts.push(`${m} شهر`);
+        if (w > 0 || parts.length === 0) parts.push(`${w} أسبوع`);
+        return parts.join(' و ');
+      }
+
+      // 8. Months, Weeks and Days (no years)
+      if (hasMonths && !hasYears) {
+        const m = diff.years * 12 + diff.months;
+        const w = hasWeeks ? Math.floor(diff.days / 7) : 0;
+        const d = hasWeeks ? diff.days % 7 : diff.days;
+        const parts = [];
+        if (m > 0) parts.push(`${m} شهر`);
+        if (hasWeeks && w > 0) parts.push(`${w} أسبوع`);
+        if (hasDays && (d > 0 || parts.length === 0)) parts.push(`${d} يوم`);
+        return parts.length > 0 ? parts.join(' و ') : `${diff.totalDays} يوم`;
+      }
+
+      // 9. Combinations with Years:
+      const parts = [];
+      if (hasYears && diff.years > 0) {
+        parts.push(`${diff.years} سنة`);
+      }
+
+      if (hasMonths && (diff.months > 0 || (parts.length === 0 && !hasWeeks && !hasDays))) {
+        parts.push(`${diff.months} شهر`);
+      }
+
+      let leftoverDays = diff.days;
+      if (!hasMonths) {
+        leftoverDays += Math.round(diff.months * 30.4375);
+      }
+
+      if (hasWeeks) {
+        const w = Math.floor(leftoverDays / 7);
+        leftoverDays = leftoverDays % 7;
+        if (w > 0 || (parts.length === 0 && !hasDays)) {
+          parts.push(`${w} أسبوع`);
+        }
+      }
+
+      if (hasDays) {
+        if (leftoverDays > 0 || parts.length === 0) {
+          parts.push(`${leftoverDays} يوم`);
+        }
+      }
+
+      return parts.length > 0 ? parts.join(' و ') : `${diff.totalDays} يوم`;
+    }
+
     function formatDisplay(diff, mode) {
       switch (mode) {
         case 'days':
@@ -489,7 +627,11 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
             ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
             : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20';
 
-          const primaryDuration = formatDisplay(diff, displayMode);
+          const evUnits = (ev.displayUnits || 'days').split(',').map((s) => s.trim()).filter(Boolean);
+          const primaryDuration =
+            displayMode === 'custom'
+              ? formatCustomDuration(diff, evUnits)
+              : formatDisplay(diff, displayMode);
           const targetFormatted = new Date(ev.targetDate).toLocaleDateString('ar-EG', {
             weekday: 'long',
             year: 'numeric',
@@ -519,9 +661,9 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
                 }
               </div>
 
-              <!-- Main Duration Display (Clean, Days/Weeks/Months only) -->
-              <div class="my-6 p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-100 dark:border-slate-800/80 text-center">
-                <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r ${color.accent} bg-clip-text text-transparent font-mono">
+              <!-- Main Duration Display (Clean, custom units or selected format) -->
+              <div class="my-6 p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-100 dark:border-slate-800/80 text-center flex flex-col items-center justify-center min-h-[90px]">
+                <div class="${primaryDuration.length > 14 ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'} font-black bg-gradient-to-r ${color.accent} bg-clip-text text-transparent font-mono tracking-tight">
                   ${primaryDuration}
                 </div>
               </div>
@@ -586,15 +728,35 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         document.getElementById('event-color').value = ev.color || 'emerald';
         document.getElementById('event-reminder').value = ev.reminderPreset || '1_day_before';
         document.getElementById('event-recurrence').value = ev.recurrence || 'none';
+
+        const units = (ev.displayUnits || 'days').split(',').map((s) => s.trim());
+        document.querySelectorAll('input[name="displayUnits"]').forEach((cb) => {
+          cb.checked = units.includes(cb.value);
+        });
       } else {
         document.getElementById('event-id').value = '';
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         const isoDate = tomorrow.toISOString().split('T')[0];
         document.getElementById('event-date').value = isoDate;
+
+        document.querySelectorAll('input[name="displayUnits"]').forEach((cb) => {
+          cb.checked = cb.value === 'days';
+        });
       }
       modal.classList.remove('hidden');
     }
+
+    // Ensure at least one unit remains checked
+    const unitCheckboxes = document.querySelectorAll('input[name="displayUnits"]');
+    unitCheckboxes.forEach((cb) => {
+      cb.addEventListener('change', () => {
+        const anyChecked = Array.from(unitCheckboxes).some((c) => c.checked);
+        if (!anyChecked) {
+          cb.checked = true;
+        }
+      });
+    });
 
     function closeModal() {
       modal.classList.add('hidden');
@@ -620,6 +782,11 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       const reminderPreset = document.getElementById('event-reminder').value;
       const recurrence = document.getElementById('event-recurrence').value;
 
+      const selectedUnits = Array.from(document.querySelectorAll('input[name="displayUnits"]:checked')).map(
+        (cb) => cb.value
+      );
+      const displayUnits = selectedUnits.length > 0 ? selectedUnits.join(',') : 'days';
+
       const payload = {
         title,
         description,
@@ -628,6 +795,7 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         color,
         reminderPreset,
         recurrence,
+        displayUnits,
       };
 
       try {

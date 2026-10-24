@@ -35,6 +35,7 @@ export async function ensureTables(d1: D1Database): Promise<void> {
       color TEXT NOT NULL DEFAULT 'emerald',
       reminder_preset TEXT NOT NULL DEFAULT '1_day_before',
       recurrence TEXT NOT NULL DEFAULT 'none',
+      display_units TEXT NOT NULL DEFAULT 'days',
       last_notified_at TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
@@ -60,6 +61,12 @@ export async function ensureTables(d1: D1Database): Promise<void> {
     } catch (e) {
       // Table already exists, ignore
     }
+  }
+
+  try {
+    await d1.prepare("ALTER TABLE events ADD COLUMN display_units TEXT DEFAULT 'days';").run();
+  } catch (e) {
+    // Column already exists, ignore
   }
 
   isTablesEnsured = true;

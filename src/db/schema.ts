@@ -30,6 +30,7 @@ export const events = sqliteTable('events', {
   color: text('color').notNull().default('emerald'), // emerald, sky, violet, amber, rose, indigo
   reminderPreset: text('reminder_preset').notNull().default('1_day_before'), // none, at_time, 1_hour_before, 1_day_before, 3_days_before, 1_week_before
   recurrence: text('recurrence').notNull().default('none'), // none, daily, weekly, monthly, yearly
+  displayUnits: text('display_units').notNull().default('days'), // e.g. "days", "weeks,days", "years,months,days", "years,months,weeks,days"
   lastNotifiedAt: text('last_notified_at'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
