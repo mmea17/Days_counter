@@ -83,11 +83,23 @@ export default {
             notificationBody = diffMs > 0
               ? `تنبيه يومي: متبقي ${diffDays} يوم على ${ev.title}`
               : `تنبيه يومي: مضى ${Math.abs(diffDays)} يوم على ${ev.title}`;
-          } else if (ev.recurrence === 'weekly' && hoursSinceLast >= 24 * 7) {
-            shouldNotify = true;
-            notificationBody = diffMs > 0
-              ? `تنبيه أسبوعي: متبقي ${diffDays} يوم على ${ev.title}`
-              : `تنبيه أسبوعي: مضى ${Math.abs(diffDays)} يوم على ${ev.title}`;
+          } else if (ev.recurrence === 'weekly') {
+            // Weekly notification on Fridays (UTC+3 Arab Standard Time)
+            const localDate = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+            const isFriday = localDate.getUTCDay() === 5;
+            const localHour = localDate.getUTCHours();
+            const lastNotifiedDate = ev.lastNotifiedAt
+              ? new Date(new Date(ev.lastNotifiedAt).getTime() + 3 * 60 * 60 * 1000).toISOString().split('T')[0]
+              : null;
+            const todayDateStr = localDate.toISOString().split('T')[0];
+
+            // Triggers on Friday starting from 9:00 AM once per week
+            if (isFriday && localHour >= 9 && lastNotifiedDate !== todayDateStr) {
+              shouldNotify = true;
+              notificationBody = diffMs > 0
+                ? `تنبيه الجمعة الأسبوعي: متبقي ${diffDays} يوم على ${ev.title}`
+                : `تنبيه الجمعة الأسبوعي: مضى ${Math.abs(diffDays)} يوم على ${ev.title}`;
+            }
           }
         }
 
