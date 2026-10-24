@@ -198,10 +198,10 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
 
         <div>
           <label for="event-date" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-            التاريخ والوقت <span class="text-rose-500">*</span>
+            تاريخ المناسبة <span class="text-rose-500">*</span>
           </label>
           <input
-            type="datetime-local"
+            type="date"
             id="event-date"
             name="targetDate"
             required
@@ -258,8 +258,7 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
               class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
             >
               <option value="none">بدون تنبيه</option>
-              <option value="at_time">في الموعد تماماً</option>
-              <option value="1_hour_before">قبل الحدث بساعة</option>
+              <option value="at_time">في يوم الحدث نفسه</option>
               <option value="1_day_before" selected>قبل الحدث بيوم</option>
               <option value="3_days_before">قبل الحدث بـ 3 أيام</option>
               <option value="1_week_before">قبل الحدث بأسبوع</option>
@@ -378,21 +377,16 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
     function calculateEventDiff(targetDateStr) {
       const target = new Date(targetDateStr);
       const now = new Date();
-      const diffMs = target.getTime() - now.getTime();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const targetDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const diffMs = targetDay.getTime() - today.getTime();
       const isPast = diffMs < 0;
-      const absMs = Math.abs(diffMs);
+      const totalDays = Math.abs(Math.round(diffMs / msPerDay));
 
-      const totalSeconds = Math.floor(absMs / 1000);
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const totalHours = Math.floor(totalMinutes / 60);
-      const totalDays = Math.floor(totalHours / 24);
-
-      const sec = totalSeconds % 60;
-      const min = totalMinutes % 60;
-      const hr = totalHours % 24;
-
-      const earlier = isPast ? target : now;
-      const later = isPast ? now : target;
+      const earlier = isPast ? targetDay : today;
+      const later = isPast ? today : targetDay;
 
       let y = later.getFullYear() - earlier.getFullYear();
       let m = later.getMonth() - earlier.getMonth();
@@ -414,9 +408,6 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         years: Math.max(0, y),
         months: Math.max(0, m),
         days: Math.max(0, d),
-        hours: hr,
-        minutes: min,
-        seconds: sec,
       };
     }
 
@@ -454,11 +445,14 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       if (!grid) return;
 
       const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       let upcomingCount = 0;
       let pastCount = 0;
 
       eventsList.forEach((ev) => {
-        if (new Date(ev.targetDate) >= now) {
+        const t = new Date(ev.targetDate);
+        const targetDay = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        if (targetDay >= today) {
           upcomingCount++;
         } else {
           pastCount++;
@@ -470,7 +464,9 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       document.getElementById('count-past').textContent = pastCount;
 
       const filtered = eventsList.filter((ev) => {
-        const isUpcoming = new Date(ev.targetDate) >= now;
+        const t = new Date(ev.targetDate);
+        const targetDay = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+        const isUpcoming = targetDay >= today;
         if (activeFilter === 'upcoming') return isUpcoming;
         if (activeFilter === 'past') return !isUpcoming;
         return true;
@@ -499,8 +495,6 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
             year: 'numeric',
             month: 'long',
             day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
           });
 
           return `
@@ -525,16 +519,10 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
                 }
               </div>
 
-              <div class="my-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-100 dark:border-slate-800/80 text-center">
-                <div class="text-2xl sm:text-3xl font-black bg-gradient-to-r ${color.accent} bg-clip-text text-transparent font-mono">
+              <!-- Main Duration Display (Clean, Days/Weeks/Months only) -->
+              <div class="my-6 p-5 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-100 dark:border-slate-800/80 text-center">
+                <div class="text-3xl sm:text-4xl font-black bg-gradient-to-r ${color.accent} bg-clip-text text-transparent font-mono">
                   ${primaryDuration}
-                </div>
-                <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-center gap-3">
-                  <span>${diff.hours} س</span>
-                  <span>:</span>
-                  <span>${diff.minutes} د</span>
-                  <span>:</span>
-                  <span class="font-mono text-emerald-600 dark:text-emerald-400">${diff.seconds} ث</span>
                 </div>
               </div>
 
@@ -593,7 +581,7 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         document.getElementById('event-id').value = ev.id;
         document.getElementById('event-title').value = ev.title;
         document.getElementById('event-desc').value = ev.description || '';
-        document.getElementById('event-date').value = ev.targetDate;
+        document.getElementById('event-date').value = ev.targetDate ? ev.targetDate.split('T')[0] : '';
         document.getElementById('event-category').value = ev.category || 'general';
         document.getElementById('event-color').value = ev.color || 'emerald';
         document.getElementById('event-reminder').value = ev.reminderPreset || '1_day_before';
@@ -602,8 +590,8 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         document.getElementById('event-id').value = '';
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const iso = tomorrow.toISOString().slice(0, 16);
-        document.getElementById('event-date').value = iso;
+        const isoDate = tomorrow.toISOString().split('T')[0];
+        document.getElementById('event-date').value = isoDate;
       }
       modal.classList.remove('hidden');
     }
@@ -802,10 +790,6 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
         showToast('حدث خطأ في إرسال الإشعار', 'error');
       }
     });
-
-    setInterval(() => {
-      renderEvents();
-    }, 1000);
 
     renderEvents();
     checkPushPermission();

@@ -1,5 +1,5 @@
-import { getDb, ensureTables } from '../db';
-import { users, sessions, type User } from '../db/schema';
+import { getDb, ensureTables } from '../db/index.ts';
+import { users, sessions, type User } from '../db/schema.ts';
 import { eq } from 'drizzle-orm';
 
 const ITERATIONS = 100000;
