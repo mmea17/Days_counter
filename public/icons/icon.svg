@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#047857" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Background rounded card -->
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="#090d16" />
+  <rect x="32" y="32" width="448" height="448" rx="96" stroke="url(#primaryGrad)" stroke-width="8" opacity="0.4" />
+
+  <!-- Calendar Base -->
+  <rect x="96" y="112" width="320" height="288" rx="36" fill="#1e293b" stroke="#334155" stroke-width="6" filter="url(#shadow)" />
+  
+  <!-- Calendar Header Strip -->
+  <path d="M 96 148 C 96 128 112 112 132 112 L 380 112 C 400 112 416 128 416 148 L 416 192 L 96 192 Z" fill="url(#primaryGrad)" />
+  
+  <!-- Rings -->
+  <rect x="160" y="80" width="24" height="64" rx="12" fill="#e2e8f0" />
+  <rect x="328" y="80" width="24" height="64" rx="12" fill="#e2e8f0" />
+
+  <!-- Clock & Hourglass / Countdown element inside -->
+  <circle cx="256" cy="296" r="76" fill="#0f172a" stroke="url(#accentGrad)" stroke-width="8" />
+  <!-- Clock hands -->
+  <line x1="256" y1="296" x2="256" y2="250" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" />
+  <line x1="256" y1="296" x2="290" y2="296" stroke="#10b981" stroke-width="6" stroke-linecap="round" />
+  <circle cx="256" cy="296" r="8" fill="#38bdf8" />
+
+  <!-- Pulse dots -->
+  <circle cx="216" cy="230" r="4" fill="#64748b" />
+  <circle cx="296" cy="230" r="4" fill="#64748b" />
+</svg>

@@ -1,0 +1,431 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="حاسبة المدة الزمنية بين تاريخين | عداد الأيام">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <!-- Header -->
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-3 border border-emerald-500/20">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+        <span>حاسبة رقمية دقيقة</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-black tracking-tight">حاسبة الفروق والمدد الزمنية</h1>
+      <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2">
+        احسب المدة الدقيقة بين أي تاريخين بالأيام، والأسابيع، والشهور، والسنوات مع حساب أيام العمل المستثناة
+      </p>
+    </div>
+
+    <!-- Inputs Card -->
+    <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-xl shadow-slate-900/5 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+        <!-- Date A (Start) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label for="date-a" class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span>التاريخ الأول (تاريخ البداية)</span>
+            </label>
+            <button
+              id="set-now-a"
+              type="button"
+              class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+            >
+              تعيين الآن
+            </button>
+          </div>
+          <input
+            type="datetime-local"
+            id="date-a"
+            class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          />
+        </div>
+
+        <!-- Swap button (Center on desktop) -->
+        <div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <button
+            id="swap-dates-btn"
+            type="button"
+            title="تبديل التاريخين"
+            class="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 transition-all shadow-md cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Date B (End) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <label for="date-b" class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+              <span>التاريخ الثاني (تاريخ النهاية)</span>
+            </label>
+            <button
+              id="set-now-b"
+              type="button"
+              class="text-[11px] font-bold text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
+            >
+              تعيين الآن
+            </button>
+          </div>
+          <input
+            type="datetime-local"
+            id="date-b"
+            class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500/50"
+          />
+        </div>
+      </div>
+
+      <!-- Quick presets & Weekend configuration -->
+      <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <!-- Weekend Settings -->
+        <div class="flex items-center gap-2 w-full sm:w-auto">
+          <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">عطلة نهاية الأسبوع:</span>
+          <select
+            id="weekend-mode"
+            class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 cursor-pointer"
+          >
+            <option value="friday_saturday">الجمعة والسبت (الدول العربية)</option>
+            <option value="saturday_sunday">السبت والأحد (المعيار الدولي)</option>
+          </select>
+        </div>
+
+        <!-- Presets -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+          <span class="text-xs text-slate-400 ml-1">إضافة إلى البداية:</span>
+          <button type="button" data-add-days="7" class="preset-btn px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 transition-colors cursor-pointer">
+            + أسبوع
+          </button>
+          <button type="button" data-add-days="30" class="preset-btn px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 transition-colors cursor-pointer">
+            + شهر (30 يوم)
+          </button>
+          <button type="button" data-add-days="100" class="preset-btn px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 transition-colors cursor-pointer">
+            + 100 يوم
+          </button>
+          <button type="button" data-add-days="365" class="preset-btn px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 transition-colors cursor-pointer">
+            + سنة كاملة
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-container" class="space-y-6">
+      <!-- Status Banner -->
+      <div id="result-status" class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-center text-sm">
+        <!-- Dynamic text -->
+      </div>
+
+      <!-- Exact Breakdown Cards -->
+      <div>
+        <h2 class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3">التفصيل الدقيق للفترة:</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-center">
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div id="res-years" class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">0</div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">سنة</div>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div id="res-months" class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">0</div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">شهر</div>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div id="res-weeks" class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">0</div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">أسبوع</div>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div id="res-days" class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">0</div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">يوم</div>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div id="res-hours" class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 font-mono">0</div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">ساعة</div>
+          </div>
+          <div class="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div id="res-minutes" class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 font-mono">0</div>
+            <div class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">دقيقة</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Conversions Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Total Conversions Card -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <h2 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>إجمالي التحويلات للوحدات</span>
+          </h2>
+          <div class="space-y-3">
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/60">
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي الأيام</span>
+              <span id="tot-days" class="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">0 يوم</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/60">
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي الأسابيع</span>
+              <span id="tot-weeks" class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono">0 أسبوع</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/60">
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي الساعات</span>
+              <span id="tot-hours" class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono">0 ساعة</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/60">
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي الدقائق</span>
+              <span id="tot-minutes" class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono">0 دقيقة</span>
+            </div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-800/60">
+              <span class="text-xs text-slate-500 dark:text-slate-400 font-bold">إجمالي الثواني</span>
+              <span id="tot-seconds" class="text-sm font-black text-slate-800 dark:text-slate-200 font-mono">0 ثانية</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Working Days Card -->
+        <div class="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-teal-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <span>أيام العمل الفعلية</span>
+            </h2>
+
+            <div class="p-6 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-slate-50 dark:to-slate-950 border border-emerald-500/20 text-center mb-4">
+              <div id="working-days-count" class="text-4xl font-black text-teal-600 dark:text-teal-400 font-mono">0</div>
+              <div class="text-xs font-bold text-slate-600 dark:text-slate-400 mt-1">يوم عمل فعلي</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+                (باستثناء أيام عطلة نهاية الأسبوع المحددة)
+              </div>
+            </div>
+
+            <div class="space-y-2 text-xs text-slate-500 dark:text-slate-400">
+              <div class="flex justify-between">
+                <span>أيام العطلات المستبعدة:</span>
+                <span id="weekend-days-count" class="font-bold text-slate-700 dark:text-slate-300 font-mono">0 يوم</span>
+              </div>
+              <div class="flex justify-between">
+                <span>نسبة أيام العمل:</span>
+                <span id="working-ratio" class="font-bold text-teal-600 dark:text-teal-400 font-mono">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Copy Button -->
+          <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button
+              id="copy-summary-btn"
+              type="button"
+              class="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span>نسخ ملخص النتيجة</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    const dateAInput = document.getElementById('date-a');
+    const dateBInput = document.getElementById('date-b');
+    const weekendSelect = document.getElementById('weekend-mode');
+
+    // Helper: format local date for datetime-local input
+    function toLocalISO(date) {
+      const pad = (n) => String(n).padStart(2, '0');
+      return (
+        date.getFullYear() +
+        '-' +
+        pad(date.getMonth() + 1) +
+        '-' +
+        pad(date.getDate()) +
+        'T' +
+        pad(date.getHours()) +
+        ':' +
+        pad(date.getMinutes())
+      );
+    }
+
+    // Set initial dates (Today and +30 days)
+    const initialStart = new Date();
+    const initialEnd = new Date();
+    initialEnd.setDate(initialEnd.getDate() + 30);
+
+    dateAInput.value = toLocalISO(initialStart);
+    dateBInput.value = toLocalISO(initialEnd);
+
+    // Swap button
+    document.getElementById('swap-dates-btn')?.addEventListener('click', () => {
+      const temp = dateAInput.value;
+      dateAInput.value = dateBInput.value;
+      dateBInput.value = temp;
+      recalculate();
+    });
+
+    // Quick set now
+    document.getElementById('set-now-a')?.addEventListener('click', () => {
+      dateAInput.value = toLocalISO(new Date());
+      recalculate();
+    });
+
+    document.getElementById('set-now-b')?.addEventListener('click', () => {
+      dateBInput.value = toLocalISO(new Date());
+      recalculate();
+    });
+
+    // Presets
+    document.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const days = parseInt(btn.getAttribute('data-add-days') || '0', 10);
+        const start = new Date(dateAInput.value || new Date());
+        const end = new Date(start);
+        end.setDate(end.getDate() + days);
+        dateBInput.value = toLocalISO(end);
+        recalculate();
+      });
+    });
+
+    // Calculation function
+    function recalculate() {
+      if (!dateAInput.value || !dateBInput.value) return;
+
+      const d1 = new Date(dateAInput.value);
+      const d2 = new Date(dateBInput.value);
+
+      const startMs = d1.getTime();
+      const endMs = d2.getTime();
+      const isPast = endMs < startMs;
+
+      const earlier = isPast ? d2 : d1;
+      const later = isPast ? d1 : d2;
+
+      const totalMs = later.getTime() - earlier.getTime();
+      const totalSeconds = Math.floor(totalMs / 1000);
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const totalDays = Math.floor(totalHours / 24);
+      const totalWeeks = Number((totalDays / 7).toFixed(1));
+
+      // Calendar breakdown
+      let y = later.getFullYear() - earlier.getFullYear();
+      let m = later.getMonth() - earlier.getMonth();
+      let d = later.getDate() - earlier.getDate();
+      let h = later.getHours() - earlier.getHours();
+      let min = later.getMinutes() - earlier.getMinutes();
+      let s = later.getSeconds() - earlier.getSeconds();
+
+      if (s < 0) {
+        s += 60;
+        min--;
+      }
+      if (min < 0) {
+        min += 60;
+        h--;
+      }
+      if (h < 0) {
+        h += 24;
+        d--;
+      }
+      if (d < 0) {
+        const prevMonthDate = new Date(later.getFullYear(), later.getMonth(), 0);
+        d += prevMonthDate.getDate();
+        m--;
+      }
+      if (m < 0) {
+        m += 12;
+        y--;
+      }
+
+      const weeks = Math.floor(d / 7);
+      const remainingDays = d % 7;
+
+      // Working days
+      const weekendMode = weekendSelect.value;
+      let workingDays = 0;
+      const cur = new Date(earlier);
+      cur.setHours(0, 0, 0, 0);
+      const endCompare = new Date(later);
+      endCompare.setHours(0, 0, 0, 0);
+
+      while (cur < endCompare) {
+        const dayOfWeek = cur.getDay();
+        let isWeekend = false;
+        if (weekendMode === 'friday_saturday') {
+          isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+        } else {
+          isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        }
+        if (!isWeekend) workingDays++;
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      const weekendDays = Math.max(0, totalDays - workingDays);
+      const ratio = totalDays > 0 ? Math.round((workingDays / totalDays) * 100) : 100;
+
+      // Update UI elements
+      document.getElementById('res-years').textContent = y;
+      document.getElementById('res-months').textContent = m;
+      document.getElementById('res-weeks').textContent = weeks;
+      document.getElementById('res-days').textContent = remainingDays;
+      document.getElementById('res-hours').textContent = h;
+      document.getElementById('res-minutes').textContent = min;
+
+      document.getElementById('tot-days').textContent = `${totalDays.toLocaleString('ar-EG')} يوم`;
+      document.getElementById('tot-weeks').textContent = `${totalWeeks.toLocaleString('ar-EG')} أسبوع`;
+      document.getElementById('tot-hours').textContent = `${totalHours.toLocaleString('ar-EG')} ساعة`;
+      document.getElementById('tot-minutes').textContent = `${totalMinutes.toLocaleString('ar-EG')} دقيقة`;
+      document.getElementById('tot-seconds').textContent = `${totalSeconds.toLocaleString('ar-EG')} ثانية`;
+
+      document.getElementById('working-days-count').textContent = workingDays.toLocaleString('ar-EG');
+      document.getElementById('weekend-days-count').textContent = `${weekendDays.toLocaleString('ar-EG')} يوم`;
+      document.getElementById('working-ratio').textContent = `${ratio}%`;
+
+      const statusEl = document.getElementById('result-status');
+      if (isPast) {
+        statusEl.textContent = `التاريخ الثاني يسبق التاريخ الأول بفارق زمني قدره ${totalDays} يوم`;
+        statusEl.className = 'p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 font-bold text-center text-sm';
+      } else {
+        statusEl.textContent = `الفارق الزمني بين التاريخين هو ${totalDays} يوم`;
+        statusEl.className = 'p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 font-bold text-center text-sm';
+      }
+    }
+
+    // Copy summary
+    document.getElementById('copy-summary-btn')?.addEventListener('click', () => {
+      const d1 = new Date(dateAInput.value).toLocaleDateString('ar-EG');
+      const d2 = new Date(dateBInput.value).toLocaleDateString('ar-EG');
+      const days = document.getElementById('tot-days').textContent;
+      const workDays = document.getElementById('working-days-count').textContent;
+
+      const text = `ملخص حساب المدة الزمنية:
+من: ${d1}
+إلى: ${d2}
+إجمالي الأيام: ${days}
+أيام العمل الفعلية: ${workDays} يوم
+تم الحساب بواسطة عداد الأيام (Days Counter)`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-summary-btn');
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span>✓ تم النسخ إلى الحافظة!</span>';
+        setTimeout(() => {
+          btn.innerHTML = original;
+        }, 2000);
+      });
+    });
+
+    dateAInput.addEventListener('input', recalculate);
+    dateBInput.addEventListener('input', recalculate);
+    weekendSelect.addEventListener('change', recalculate);
+
+    recalculate();
+  </script>
+</Layout>
