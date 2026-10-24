@@ -1,4 +1,4 @@
-const CACHE_NAME = 'days-counter-v2';
+const CACHE_NAME = 'days-counter-v3';
 const STATIC_ASSETS = [
   '/',
   '/offline.html',

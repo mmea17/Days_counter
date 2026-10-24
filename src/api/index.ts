@@ -200,41 +200,37 @@ app.get('/api/auth/me', (c) => {
 });
 
 /* ==========================================================================
-   EVENTS CRUD ROUTES
+   EVENTS & ITEMS CRUD ROUTES
    ========================================================================== */
 
-// Get all events for the logged-in user
-app.get('/api/events', async (c) => {
+// Handler: Get all events/items
+const getEventsHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
-  const user = (c.get as any)('user');
+  const user = c.get('user');
 
   try {
     const db = getDb(c.env.DB);
-    const category = c.req.query('category');
-
     let query = db
       .select()
       .from(events)
       .where(eq(events.userId, user.id));
 
     const userEvents = await query;
-
-    // Sort by targetDate ascending
     userEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targetDate).getTime());
 
-    return c.json({ events: userEvents });
+    return c.json({ events: userEvents, items: userEvents });
   } catch (error: any) {
     console.error('Error fetching events:', error);
     return c.json({ error: 'تعذر جلب الأحداث' }, 500);
   }
-});
+};
 
-// Create new event
-app.post('/api/events', async (c) => {
+// Handler: Create new event/item
+const createEventHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
-  const user = (c.get as any)('user');
+  const user = c.get('user');
 
   try {
     const body = await c.req.json();
@@ -273,18 +269,18 @@ app.post('/api/events', async (c) => {
 
     await db.insert(events).values(newEvent);
 
-    return c.json({ success: true, event: newEvent }, 201);
+    return c.json({ success: true, event: newEvent, item: newEvent }, 201);
   } catch (error: any) {
     console.error('Error creating event:', error);
     return c.json({ error: 'تعذر إنشاء الحدث' }, 500);
   }
-});
+};
 
-// Update event
-app.put('/api/events/:id', async (c) => {
+// Handler: Update event/item
+const updateEventHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
-  const user = (c.get as any)('user');
+  const user = c.get('user');
   const eventId = c.req.param('id');
 
   try {
@@ -325,23 +321,23 @@ app.put('/api/events/:id', async (c) => {
     await db.update(events).set(updates).where(eq(events.id, eventId));
 
     const updated = await db.select().from(events).where(eq(events.id, eventId)).limit(1);
-    return c.json({ success: true, event: updated[0] });
+    return c.json({ success: true, event: updated[0], item: updated[0] });
   } catch (error: any) {
     console.error('Error updating event:', error);
     return c.json({ error: 'تعذر تعديل الحدث' }, 500);
   }
-});
+};
 
-// Delete event
-app.delete('/api/events/:id', async (c) => {
+// Handler: Delete event/item
+const deleteEventHandler = async (c: any) => {
   const unauth = requireAuth(c);
   if (unauth) return unauth;
-  const user = (c.get as any)('user');
+  const user = c.get('user');
   const eventId = c.req.param('id');
 
   try {
     const db = getDb(c.env.DB);
-    const result = await db
+    await db
       .delete(events)
       .where(and(eq(events.id, eventId), eq(events.userId, user.id)));
 
@@ -350,7 +346,20 @@ app.delete('/api/events/:id', async (c) => {
     console.error('Error deleting event:', error);
     return c.json({ error: 'تعذر حذف الحدث' }, 500);
   }
-});
+};
+
+// Route bindings for both /api/items (adblock-safe) and /api/events
+app.get('/api/events', getEventsHandler);
+app.get('/api/items', getEventsHandler);
+
+app.post('/api/events', createEventHandler);
+app.post('/api/items', createEventHandler);
+
+app.put('/api/events/:id', updateEventHandler);
+app.put('/api/items/:id', updateEventHandler);
+
+app.delete('/api/events/:id', deleteEventHandler);
+app.delete('/api/items/:id', deleteEventHandler);
 
 /* ==========================================================================
    PUSH NOTIFICATIONS ROUTES

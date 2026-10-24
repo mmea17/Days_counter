@@ -643,7 +643,7 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       };
 
       try {
-        const url = id ? `/api/events/${id}` : '/api/events';
+        const url = id ? `/api/items/${id}` : '/api/items';
         const method = id ? 'PUT' : 'POST';
 
         const res = await fetch(url, {
@@ -699,7 +699,7 @@ initialEvents.sort((a, b) => new Date(a.targetDate).getTime() - new Date(b.targe
       if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الحدث؟')) return;
 
       try {
-        const res = await fetch(`/api/events/${id}`, {
+        const res = await fetch(`/api/items/${id}`, {
           method: 'DELETE',
           credentials: 'same-origin',
         });
