@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "days_counter_db"
-database_id = "local-days-counter-db"
+database_id = "0593bd9e-a652-4c89-a4d8-2ab1f072d0fb"
 
 [triggers]
 crons = ["*/15 * * * *"]
